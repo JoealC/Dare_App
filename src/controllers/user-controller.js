@@ -27,8 +27,9 @@ export const registerUser = async (req, res) => {
         })
         newUser.otp= otp
         await newUser.save()
+        const hidePass = await User.find(newUser).select('-password')
         await sendVerificationEmail(email, otp)
-        successResponse(res, 200, 'User registered successfully, Please verify your email')
+        successResponse(res, 200, 'User registered successfully, Please verify your email', hidepass)
     }catch(err){
         errorResponse(res, 500, "Internal server error", err)
     }
@@ -39,7 +40,7 @@ export const verifyEmail = async(req, res) => {
         const{email, otp}= req.body
         const user = await User.findOne({email})
         if(user && user.otp === otp){
-            user.status = 'approved',
+            user.status = 0,
             user.save()
             //const authToken = sign({objectId: user._id, email: user.email}, process.env.SECRET_KEY, {expiresIn: '1d'})
             successResponse(res, 200, "Email verified, user approved")
@@ -56,9 +57,9 @@ export const loginUser = async(req, res) =>{
         const {email, password} = req.body
         const user = await User.findOne({email})
         if(user){
-            if(user.status === 'waiting'){
+            if(user.status === 4){
                 errorResponse(res, 400, "Waiting for admin's approval")
-            }else if(user.status === 'approved'){
+            }else if(user.status === 0){
                 const passwordMatch = await bcrypt.compare(password, user.password)
                 if(passwordMatch){
                     const authToken= sign({objectId: user._id, email: user.email}, process.env.SECRET_KEY, {expiresIn:'1d'})

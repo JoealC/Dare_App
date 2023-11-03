@@ -38,9 +38,9 @@ const userSchema = new mongoose.Schema({
         require: true,
     },
     status:{
-        type:String,
-        enum:['waiting', 'approved', 'rejected', 'banned', 'pending'],
-        default: 'waiting'
+        type:Number,
+        enum:[4, 0, 2, 3, 1],
+        default: 4
       },
     rejection_count:{
         type: Number,
@@ -59,6 +59,6 @@ const userSchema = new mongoose.Schema({
         default: Date.now()
       }
     },
-    {timestamps: true});
+    {timestamps: false});
 
 export const User = mongoose.model('User', userSchema)

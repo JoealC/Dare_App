@@ -2,9 +2,7 @@ import { Dare } from "../models/Dare";
 import { User } from "../models/User";
 import { errorResponse, successResponse } from "../middleware/response";
 import {startOfDay, endOfDay, subDays} from 'date-fns'
-import { schedule } from "node-cron";
 import {config} from 'dotenv'
-import { transporter } from "../service/eodEmail-service";
 config()
 
 export const addFriend = async (req, res) => {
@@ -13,12 +11,12 @@ export const addFriend = async (req, res) => {
       const user = await User.findById(userId);
   
       if (!user) {
-        return errorResponse( res, 404, 'User not found');
+        return errorResponse( res, 404, 'User not found', {});
       }
       const friend = await User.findById(friendId);
   
       if (!friend) {
-        return errorResponse(res, 404, 'Friend not found');
+        return errorResponse(res, 404, 'Friend not found', {});
       }
       if (!user.friends.includes(friendId)) {
         user.friends.push(friendId);
@@ -26,7 +24,7 @@ export const addFriend = async (req, res) => {
         if(!friend.friends.includes(userId))
         friend.friends.push(userId)
         await friend.save()
-        return successResponse(res, 200, 'Friend added successfully');
+        return successResponse(res, 200, 'Friend added successfully', );
         }else{
         return errorResponse(res, 200, "Friend is already in your friend list")
       }
@@ -43,7 +41,7 @@ export const addFriend = async (req, res) => {
             dare_name,
             suggested_to,
             time,
-            date: Date.now()
+            date: date
         })
         await dare.save()
         successResponse(res, 200, "Dare created successfully", dare)
@@ -57,7 +55,7 @@ export const addFriend = async (req, res) => {
         const{dare_id, friend_id} = req.body
         const dare = await Dare.findById(dare_id)
         if(!dare){
-           return errorResponse(res, 404, "Dare not found")
+           return errorResponse(res, 404, "Dare not found", {})
         }
         dare.suggested_to.push(friend_id)
         await dare.save()
@@ -72,9 +70,9 @@ export const addFriend = async (req, res) => {
         const {dare_Id} = req.body
         const dare = await Dare.findById(dare_Id)
         if(!dare){
-        return errorResponse(res, 404, "Dare not found")
+        return errorResponse(res, 404, "Dare not found", {})
         }
-        dare.status = 'completed'
+        dare.status = 0
         await dare.save()
         successResponse(res, 200, "Dare marked as completed", dare)
     }catch(err){
@@ -96,7 +94,7 @@ export const addFriend = async (req, res) => {
         )
         console.log(editDare)
         if(!editDare){
-            return errorResponse(res, 404, 'Dare not found')
+            return errorResponse(res, 404, 'Dare not found',{})
         }
         successResponse(res, 200, 'Dare edited successfully', editDare)
     }catch(err){
@@ -109,7 +107,7 @@ export const addFriend = async (req, res) => {
     try{
         const deleteDare = await Dare.findByIdAndDelete(req.params.id)
         if(!deleteDare){
-            return errorResponse(res, 404, 'Dare not found')
+            return errorResponse(res, 404, 'Dare not found',{})
         }
         successResponse(res, 200, "User deleted successfully")
     }catch(err){
@@ -150,7 +148,7 @@ export const addFriend = async (req, res) => {
                 $gte: startOfPreviousDay,
                 $lte: endOfPreviousDay,
             },
-            status: 'pending'
+            status: 1
         })
         console.log(pendingDares)
         console.log(startOfPreviousDay)
@@ -161,34 +159,7 @@ export const addFriend = async (req, res) => {
     }
   }
 
-export const eodSchedule =  async (req, res) => {
-    try{
-        const users = await User.find({})
-        for (const user of users){
-            const completeDares = await Dare.find({suggested_to: user._id, status: 'completed'})
-            const pendingDares = await Dare.find({suggested_to: user._id, status: 'pending'})
-            const emailContent =`Dear ${user.full_name},\n\n` + `Here are you completed dares:\n${completeDares.map(dare => dare.dare_name).join('\n')}\n\n` + `And here are your pending dares:\n${pendingDares.map(dare => dare.dare_name).join('\n')}`
-            const mailOptions = {
-                from: process.env.user,
-                to: user.email,
-                subject: "End of Day Dares Update",
-                text: emailContent,
-            }
 
-            schedule('**20***', () =>{
-            transporter.sendMail(mailOptions, (error, info) => {
-                if(error){
-                   return errorResponse(res, 400, "Error sending email", error)
-                }else{
-                   return successResponse(res, 200, "EOD email sent:", info.response )
-                }
-            })
-        })
-    }
-        }catch(err){
-         errorResponse(res, 500, 'EOD email error:', err)
-    }
-}
 
 
 

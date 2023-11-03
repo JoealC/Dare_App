@@ -21,7 +21,8 @@ export const registerAdmin = async(req, res ) => {
             password: hashedPassword
         })
         await newAdmin.save()
-        successResponse(res, 200, 'Admin registered successfully', newAdmin)
+        const hidePass = await Admin.findOne(newAdmin).select('-password')
+        successResponse(res, 200, 'Admin registered successfully', hidePass)
     }catch(err){
       console.log(err)
         errorResponse(res, 500, "Internal server error", err)
@@ -37,7 +38,7 @@ export const loginAdmin = async(req, res) => {
       }
       const passwordMatch = await bcrypt.compare(password, admin.password)
       if(!passwordMatch){
-        return errorResponse(res, 401, "Invalid Password")
+        return errorResponse(res, 401, "Invalid Password", {})
       }
       const token = sign({objectId: admin._id, username: admin.username}, process.env.SECRET_KEY, {expiresIn:'1d'})
       successResponse(res, 200, ({token}))
@@ -61,7 +62,7 @@ export const loginAdmin = async(req, res) => {
         {new: true}  
       ).select("-password")
       if(!updateAdmin){
-        return errorResponse(res, 404, "Admin not found")
+        return errorResponse(res, 404, "Admin not found", {})
       }
       successResponse(res, 200, "Updating Admin Successfull", updateAdmin)
     }catch(err){
@@ -74,9 +75,9 @@ export const deleteAdmin = async (req, res) => {
     try{
       const deleteAdmin = await Admin.findByIdAndDelete(req.params.id)
       if(!deleteAdmin){
-        errorResponse(res, 404, 'Admin not found');
+        errorResponse(res, 404, 'Admin not found', {});
       }
-      successResponse(res,200, "Admin deleted Successfully");
+      successResponse(res,200, "Admin deleted Successfully", deleteAdmin);
       }catch(err){
         console.log(err)
         errorResponse(res, 500, "Internal Server Error", err)
@@ -85,7 +86,7 @@ export const deleteAdmin = async (req, res) => {
 
 export const viewKYCDocuments = async(req, res) => {
     try{
-        const userInWaiting = await User.find({status: 'waiting'}).select("full_name, kyc_documents")
+        const userInWaiting = await User.find({status: '4'}).select("full_name, kyc_documents")
         if(userInWaiting.length === 0){
           return errorResponse(res, 401, "No list of KYC documents")
         }
@@ -109,15 +110,15 @@ export const approveRejectUser = async(req, res) =>{
     if(!user){
      return errorResponse(res, 404, 'User not found')
     }
-    if (status === 'approved') { 
-      user.status = 'approved';
+    if (status === 0) { 
+      user.status = 0;
       await user.save();
       return successResponse(res, 200,'User approved successfully');
-    } else if (status === 'rejected') {
-      user.status = 'rejected';
+    } else if (status === 2) {
+      user.status = 2;
       user.rejection_count += 1;
       if (user.rejection_count >= 3) {
-        user.status = 'banned';
+        user.status = 3;
         return successResponse(res, 200, "User Baned Successfully")
       }
       await user.save();

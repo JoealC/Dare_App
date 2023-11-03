@@ -35,7 +35,7 @@ const adminSchema = new mongoose.Schema({
       }
     },
 
-    {timestamps: true});
+    {timestamps: false});
 
 export const Admin = mongoose.model('Admin', adminSchema)
     

@@ -18,15 +18,15 @@ const dareSchema = new mongoose.Schema({
         required: true,
     },
     status:{
-        type: String,
-        enum:['pending', 'completed', 'rejected'],
-        default: 'pending'
+        type: Number,
+        enum:[1, 0],
+        default: 1
     },
     created_at:{
         type: Date,
         default: Date.now()
       }
     },
-    {timestamps: true});
+    {timestamps: false});
 
 export const Dare = mongoose.model('Dare', dareSchema)

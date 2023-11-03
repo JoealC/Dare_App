@@ -3,15 +3,16 @@ import { json } from 'body-parser'
 import { connectDatabase } from './config/database'
 import userRoutes from './routes/user-routes'
 import adminRoutes from './routes/admin-routes'
-import { eodSchedule } from './controllers/dare-controller'
 import dareRoutes from './routes/dare-routes'
+import eodEmailScheduler from './service/eodEmail-service'
 
 
 
 const app = express()
 const PORT = 3000
 connectDatabase()
-eodSchedule
+eodEmailScheduler
+
 
 app.use(json())
 
