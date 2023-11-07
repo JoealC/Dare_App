@@ -29,7 +29,7 @@ export const registerUser = async (req, res) => {
         await newUser.save()
         const hidePass = await User.find(newUser).select('-password')
         await sendVerificationEmail(email, otp)
-        successResponse(res, 200, 'User registered successfully, Please verify your email', hidepass)
+        successResponse(res, 200, 'User registered successfully, Please verify your email', hidePass)
     }catch(err){
         errorResponse(res, 500, "Internal server error", err)
     }

@@ -1,7 +1,7 @@
 import { Dare } from "../models/Dare";
 import { User } from "../models/User";
 import { errorResponse, successResponse } from "../middleware/response";
-import {startOfDay, endOfDay, subDays} from 'date-fns'
+import {startOfDay, endOfDay, subDays, setDate} from 'date-fns'
 import {config} from 'dotenv'
 config()
 
@@ -117,23 +117,42 @@ export const addFriend = async (req, res) => {
 
   export const filterDare = async(req, res) => {
     try{
-        const {dare_name, suggested_to, time, date} = req.query
-        const filter = {}
+        const { dare_name, suggested_to, time, startDate, endDate, searchDate, searchId } = req.query
+        const filter ={}
         if(dare_name){
-            filter.dare_name = dare_name
-        }
-        if(suggested_to){
-            filter.suggested_to = dare_name
+          filter.dare_name = new RegExp(dare_name, 'i')
+       }
+       if(suggested_to){
+        filter.suggested_to = new RegExp(suggested_to, 'i')
         }
         if(time){
-            filter.time = time
+          filter.time = new RegExp(time, 'i')
+          }
+        if(startDate && endDate){
+          filter.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+          }
+        }else if(searchDate){
+          const searchDay = new Date(searchDate)
+          const nextDay = new Date(searchDate)
+          nextDay.setDate(searchDay.getDate() + 1)
+          filter.date = {
+            $gte: searchDay,
+            $lte: nextDay
+          }
         }
-        if(date){
-            filter.date = date
+        if (searchId) {
+          filter._id = searchId 
         }
         const filteredDares = await Dare.find(filter)
-        successResponse(res, 200, "Dare filtered successfully", filter)
+        if(filteredDares.length === 0) {
+         return errorResponse(res, 404, "No dares found", filteredDares)
+        }
+        successResponse(res, 200, "Dare filtered successfully", filteredDares)
+
     }catch(err){
+      console.log(err)
         errorResponse(res, 500, "Error in filtering dare")
     }
   }
@@ -155,7 +174,7 @@ export const addFriend = async (req, res) => {
         console.log(endOfPreviousDay)
         successResponse(res, 200, "Pending dares from the previous day retrieved successfully", pendingDares)
     }catch(err){
-        errorResponse(res, 500, 'Error receiving pending dares from previous days')
+        errorResponse(res, 500, 'Error receiving pending dares from previous days', err)
     }
   }
 
